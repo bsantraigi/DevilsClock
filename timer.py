@@ -39,6 +39,16 @@ def main():
     stopwatch = False
     timer = False
     stopwatch_time = 0
+
+    # Ask for a initial time amount
+    # Must be a positive or negative number indicating accumulated minutes
+    print('Enter initial time in minutes: ', end='')
+    try:
+        stopwatch_time = int(input()) * 6000
+    except ValueError:
+        print('Invalid time. Using 0 as initial time')
+        stopwatch_time = 0
+
     while True:
         print_menu()
         key = input()
