@@ -11,12 +11,12 @@
 import subprocess
 import time
 
-
+time_per_task = 30*60*100 # 30 minutes as 100th of a second
 TASKS = [
-    {'name': 'Studying', 'time': 4, 'done': 0},
-    {'name': 'Coding', 'time': 2, 'done': 0},
-    {'name': 'Reading', 'time': 3, 'done': 0},
-    {'name': 'Writing', 'time': 4, 'done': 0}
+    {'name': 'Studying', 'credit': 4, 'done': 0, 'timer': time_per_task},
+    {'name': 'Coding', 'credit': 2, 'done': 0, 'timer': time_per_task},
+    {'name': 'Reading', 'credit': 3, 'done': 0, 'timer': time_per_task},
+    {'name': 'Writing', 'credit': 4, 'done': 0, 'timer': time_per_task},
 ]
 CURRENT_TASK = 0
 
@@ -36,7 +36,8 @@ def print_stats_table_footer():
 def print_stats_table():
     print_stats_table_header()
     for task in TASKS:
-        print(task['name'].ljust(10) + '|'.center(3) + str(task['done']).rjust(10) + '|'.center(3) + str(task['time'] - task['done']).rjust(10))
+        timer_state = task['credit'] - task['done'] - 1 + task['timer']/time_per_task
+        print(task['name'].ljust(10) + '|'.center(3) + str(task['done']).rjust(10) + '|'.center(3) + f"{timer_state:0.2f}".rjust(10))
     print_stats_table_footer()
 
 
@@ -60,18 +61,19 @@ def print_time(t, prefix=None):
 
 def find_next_task():
     global CURRENT_TASK
-    if TASKS[CURRENT_TASK]['done'] < TASKS[CURRENT_TASK]['time']:
+    if TASKS[CURRENT_TASK]['done'] < TASKS[CURRENT_TASK]['credit']:
         return CURRENT_TASK
     else:
         for i in range(len(TASKS)):
             _i = (i + CURRENT_TASK + 1) % len(TASKS)
-            if TASKS[_i]['done'] < TASKS[_i]['time']:
+            if TASKS[_i]['done'] < TASKS[_i]['credit']:
                 CURRENT_TASK = _i
                 return _i
     return -1
 
 def print_menu():
     print()
+    print_welcome_message("~Task Manager~")
     print_stats_table()
     print()
     # Next task
@@ -84,20 +86,16 @@ def print_menu():
         print('Do NOT come back until tomorrow!!!')
 
 def main():
-    stopwatch = False
     timer = False
     stopwatch_time = 0
+
+    # S/s: Start/resume timer
+    # C: Change task
+    
     while True:
         print_menu()
         key = input()
         if key == 's' or key == 'S':
-            if stopwatch:
-                stopwatch = False
-            else:
-                stopwatch = True
-                start_time = time.time()
-                # stopwatch_time = 0
-        elif key == 't' or key == 'T':
             if timer:
                 timer = False
             else:
@@ -109,24 +107,8 @@ def main():
         else:
             print('Invalid key')
 
-        if stopwatch:
-            # stopwatch loop, ctrl-c to stop
-            print()
-            while True:
-                try:
-                    delta_time = int((time.time() - start_time) * 100)
-                    # sleep 10 ms
-                    time.sleep(0.05)
-                    # Print h:m:s:ms
-                    print_time(stopwatch_time + delta_time, "Stopwatch: ")
-                except KeyboardInterrupt:
-                    # Print h:m:s:ms
-                    stopwatch_time += delta_time
-                    print_time(stopwatch_time, "Stopwatch stopped. Total Time -->")
-
-                    stopwatch = False
-                    break
         if timer:
+            # stopwatch loop, ctrl-c to stop
             print()
             while True:
                 try:
@@ -134,7 +116,7 @@ def main():
                     # sleep 10 ms
                     time.sleep(0.01)
                     # Print h:m:s:ms
-                    print_time(stopwatch_time - delta_time, "Timer: ")
+                    print_time(stopwatch_time - delta_time, f"Timer {TASKS[CURRENT_TASK]['name']} -->")
                     # if stopwatch_time == 0:
                     #     beep()
                     #     print_time(stopwatch_time, "Timer done. Total Time -->")
@@ -144,6 +126,7 @@ def main():
                 except KeyboardInterrupt:
                     # Print h:m:s:ms
                     stopwatch_time -= delta_time
+                    TASKS[CURRENT_TASK]['timer'] -= delta_time
                     print_time(stopwatch_time, "Timer stopped. Total Time Left -->")
 
                     timer = False
@@ -156,5 +139,4 @@ def print_welcome_message(message):
     print(magenta_ascii_art)
 
 if __name__ == '__main__':
-    print_welcome_message("~Task Manager~")
     main()
